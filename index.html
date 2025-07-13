@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ระบบรายรับรายจ่าย</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f0f4f8; }
+    h1 { color: #333; }
+    .entry { display: flex; gap: 10px; margin-bottom: 10px; }
+    .entry input, select { padding: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+    th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
+    th { background: #eee; }
+    .summary { margin-top: 20px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <h1>บันทึกรายรับ-รายจ่าย รายเดือน</h1>
+
+  <div class="entry">
+    <input type="date" id="date" />
+    <input type="text" id="description" placeholder="รายละเอียด" />
+    <input type="number" id="amount" placeholder="จำนวนเงิน" />
+    <select id="type">
+      <option value="income">รายรับ</option>
+      <option value="expense">รายจ่าย</option>
+    </select>
+    <button onclick="addEntry()">เพิ่ม</button>
+  </div>
+
+  <div>
+    <label>เลือกเดือน:</label>
+    <input type="month" id="monthSelector" onchange="renderTable()" />
+  </div>
+
+  <table id="recordsTable">
+    <thead>
+      <tr>
+        <th>วันที่</th>
+        <th>รายละเอียด</th>
+        <th>ประเภท</th>
+        <th>จำนวน</th>
+        <th>ลบ</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="summary" id="summary"></div>
+
+  <script>
+    const entries = JSON.parse(localStorage.getItem("entries") || "[]");
+
+    function addEntry() {
+      const date = document.getElementById("date").value;
+      const description = document.getElementById("description").value;
+      const amount = parseFloat(document.getElementById("amount").value);
+      const type = document.getElementById("type").value;
+
+      if (!date || !description || isNaN(amount)) {
+        alert("กรุณากรอกข้อมูลให้ครบ");
+        return;
+      }
+
+      entries.push({ date, description, amount, type });
+      localStorage.setItem("entries", JSON.stringify(entries));
+      renderTable();
+    }
+
+    function deleteEntry(index) {
+      entries.splice(index, 1);
+      localStorage.setItem("entries", JSON.stringify(entries));
+      renderTable();
+    }
+
+    function renderTable() {
+      const tableBody = document.querySelector("#recordsTable tbody");
+      tableBody.innerHTML = "";
+
+      const selectedMonth = document.getElementById("monthSelector").value;
+      let incomeTotal = 0, expenseTotal = 0;
+
+      entries.forEach((entry, index) => {
+        if (!selectedMonth || entry.date.startsWith(selectedMonth)) {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${entry.date}</td>
+            <td>${entry.description}</td>
+            <td>${entry.type === "income" ? "รายรับ" : "รายจ่าย"}</td>
+            <td>${entry.amount.toFixed(2)}</td>
+            <td><button onclick="deleteEntry(${index})">ลบ</button></td>
+          `;
+          tableBody.appendChild(row);
+
+          if (entry.type === "income") incomeTotal += entry.amount;
+          else expenseTotal += entry.amount;
+        }
+      });
+
+      const summary = document.getElementById("summary");
+      summary.textContent = `รวมรายรับ: ${incomeTotal.toFixed(2)} บาท | รายจ่าย: ${expenseTotal.toFixed(2)} บาท | คงเหลือ: ${(incomeTotal - expenseTotal).toFixed(2)} บาท`;
+    }
+
+    // โหลดเดือนปัจจุบันเมื่อเริ่มต้น
+    document.getElementById("monthSelector").value = new Date().toISOString().slice(0, 7);
+    renderTable();
+  </script>
+</body>
+</html>
