@@ -87,7 +87,7 @@
         <th>รายละเอียด</th>
         <th>ประเภท</th>
         <th>จำนวน</th>
-        <th>ลบ</th>
+        <th>จัดการ</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -97,6 +97,7 @@
 
   <script>
     const entries = JSON.parse(localStorage.getItem("entries") || "[]");
+    let editIndex = -1;
 
     function addEntry() {
       const date = document.getElementById("date").value;
@@ -109,15 +110,43 @@
         return;
       }
 
-      entries.push({ date, description, amount, type });
+      if (editIndex === -1) {
+        entries.push({ date, description, amount, type });
+      } else {
+        entries[editIndex] = { date, description, amount, type };
+        editIndex = -1;
+        document.querySelector("button[onclick='addEntry()']").textContent = "เพิ่ม";
+      }
+
       localStorage.setItem("entries", JSON.stringify(entries));
+      clearForm();
       renderTable();
     }
 
     function deleteEntry(index) {
-      entries.splice(index, 1);
-      localStorage.setItem("entries", JSON.stringify(entries));
-      renderTable();
+      if (confirm("คุณต้องการลบข้อมูลนี้หรือไม่?")) {
+        entries.splice(index, 1);
+        localStorage.setItem("entries", JSON.stringify(entries));
+        renderTable();
+      }
+    }
+
+    function editEntry(index) {
+      const entry = entries[index];
+      document.getElementById("date").value = entry.date;
+      document.getElementById("description").value = entry.description;
+      document.getElementById("amount").value = entry.amount;
+      document.getElementById("type").value = entry.type;
+
+      editIndex = index;
+      document.querySelector("button[onclick='addEntry()']").textContent = "อัปเดต";
+    }
+
+    function clearForm() {
+      document.getElementById("date").value = "";
+      document.getElementById("description").value = "";
+      document.getElementById("amount").value = "";
+      document.getElementById("type").value = "income";
     }
 
     function renderTable() {
@@ -135,7 +164,10 @@
             <td>${entry.description}</td>
             <td>${entry.type === "income" ? "รายรับ" : "รายจ่าย"}</td>
             <td>${entry.amount.toFixed(2)}</td>
-            <td><button onclick="deleteEntry(${index})">ลบ</button></td>
+            <td>
+              <button onclick="editEntry(${index})">แก้ไข</button>
+              <button onclick="deleteEntry(${index})">ลบ</button>
+            </td>
           `;
           tableBody.appendChild(row);
 
